@@ -2,7 +2,7 @@
 node_modules/
 dist/
 examples/dist/
-KoLmafia/scripts/libram.js
+KoLmafia/scripts/snapshot.js
 .vscode/
 src/**/*.js
 src/**/*.d.ts

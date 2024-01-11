@@ -3,7 +3,7 @@ import { build } from "esbuild";
 import babel from "esbuild-plugin-babel";
 
 build({
-  entryPoints: { libram: "src/index.ts" },
+  entryPoints: { snapshot: "src/index.ts" },
   outdir: "KoLmafia/scripts",
   bundle: true,
   minifySyntax: true,
