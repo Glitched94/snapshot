@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "declaration": true,
+    "lib": ["esnext"],
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "newLine": "LF",
+    "strict": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "outDir": "dist",
+    "stripInternal": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src/"],
+  "typedocOptions": {
+    "entryPoints": ["src/index.ts"]
+  }
+}
