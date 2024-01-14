@@ -145,6 +145,7 @@ export class Snapshot {
   meat: number;
   items: Map<Item, number>;
   totalTurns: number;
+  timestamp: Date;
   /**
    * Construct a new Snapshot
    *
@@ -156,10 +157,12 @@ export class Snapshot {
     meat: number,
     items: Map<Item, number>,
     totalTurns: number,
+    timestamp?: Date
   ) {
     this.meat = meat;
     this.items = items;
     this.totalTurns = totalTurns;
+    this.timestamp = timestamp ?? new Date();
   }
 
   /**
@@ -201,6 +204,7 @@ export class Snapshot {
    * @returns a new Snapshot representing the difference between this Snapshot and the other Snapshot
    */
   diff(other: Snapshot): Snapshot {
+    const timeDiff = this.timestamp.getTime() - other.timestamp.getTime();
     return new Snapshot(
       this.meat - other.meat,
       inventoryOperation(
@@ -209,6 +213,7 @@ export class Snapshot {
         (a: number, b: number) => a - b,
       ),
       this.totalTurns - other.totalTurns,
+      new Date(timeDiff)
     );
   }
 
@@ -222,36 +227,6 @@ export class Snapshot {
    */
   static diff(a: Snapshot, b: Snapshot): Snapshot {
     return a.diff(b);
-  }
-
-  /**
-   * Generate a new Snapshot combining multiple Snapshots together
-   *
-   * @param other the Snapshot from which to add elements to this set
-   * @returns a new Snapshot representing the addition of other to this
-   */
-  add(other: Snapshot): Snapshot {
-    return new Snapshot(
-      this.meat + other.meat,
-      inventoryOperation(
-        this.items,
-        other.items,
-        (a: number, b: number) => a + b,
-      ),
-      this.totalTurns + other.totalTurns,
-    );
-  }
-
-  /**
-   * Combine the contents of Snapshots
-   *
-   * @param others the set of Snapshots to combine together
-   * @returns a new Snapshot representing the combined Snapshots
-   */
-  static add(...others: Snapshot[]): Snapshot {
-    return others.reduce((previousInv, currentInv) =>
-      previousInv.add(currentInv),
-    );
   }
 
   static getFilepath(filename: string): string {
@@ -270,6 +245,7 @@ export class Snapshot {
       meat: this.meat,
       items: Object.fromEntries(this.items),
       totalTurns: this.totalTurns,
+      timestamp: this.timestamp.toJSON()
     };
     bufferToFile(JSON.stringify(val), Snapshot.getFilepath(filename));
   }
@@ -288,6 +264,7 @@ export class Snapshot {
         meat: number;
         items: { [item: string]: number };
         totalTurns?: number;
+        timestamp: string
       } = JSON.parse(fileValue);
 
       const parsedItems: [Item, number][] = Object.entries(val.items).map(
@@ -298,6 +275,7 @@ export class Snapshot {
         val.meat,
         new Map<Item, number>(parsedItems),
         val.totalTurns ?? 0,
+        new Date(val.timestamp)
       );
     } else {
       // if the file does not exist, return an empty Snapshot
