@@ -1,6 +1,7 @@
 import {
   Item,
   bufferToFile,
+  equippedItem,
   fileToBuffer,
   getCampground,
   getCloset,
@@ -15,13 +16,26 @@ import {
   todayToString,
   totalTurnsPlayed,
 } from "kolmafia";
-import { $item, $items, getFoldGroup } from "libram";
+import { $item, $items, $slots, getFoldGroup } from "libram";
 import {
   ItemDetail,
   ItemResult,
   MeatPerAdventureAnalysis,
 } from "libram/dist/session";
 import { sum } from "libram/dist/utils";
+
+function getEquipment(): { [item: string]: number } {
+  const equippedItems: { [item: string]: number } = {};
+
+  $slots``.forEach((slot) => {
+    const item = equippedItem(slot);
+    if (item !== $item.none) {
+      equippedItems[item.name] = 1;
+    }
+  });
+
+  return equippedItems;
+}
 
 /**
  * Return a mapping of inventory items, mapping foldable items to a single of their forms
@@ -81,8 +95,8 @@ function mySnapshotItemsWrapper(inventoryOnly = false): Map<Item, number> {
 
   const inventory = new Map<Item, number>();
   const invLocations = inventoryOnly
-    ? [getInventory]
-    : [getInventory, getCloset, getDisplay, getStorage];
+    ? [getInventory, getEquipment]
+    : [getInventory, getEquipment, getCloset, getDisplay, getStorage];
 
   for (const inventoryFunc of invLocations) {
     for (const [itemStr, quantity] of Object.entries(inventoryFunc())) {
