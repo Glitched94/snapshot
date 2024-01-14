@@ -12,7 +12,10 @@ import {
   myMeat,
   myName,
   myStorageMeat,
+  print,
+  printHtml,
   toItem,
+  toString,
   todayToString,
   totalTurnsPlayed,
 } from "kolmafia";
@@ -23,6 +26,7 @@ import {
   MeatPerAdventureAnalysis,
 } from "libram/dist/session";
 import { sum } from "libram/dist/utils";
+import { itemValue } from "./itemValue";
 
 function getEquipment(): { [item: string]: number } {
   const equippedItems: { [item: string]: number } = {};
@@ -141,7 +145,7 @@ function inventoryOperation(
   return new Map<Item, number>(diffEntries.filter(([, value]) => value !== 0));
 }
 
-export class Snapshot {
+class Snapshot {
   meat: number;
   items: Map<Item, number>;
   totalTurns: number;
@@ -368,4 +372,82 @@ export class Snapshot {
   ): MeatPerAdventureAnalysis {
     return Snapshot.computeMPA(this, other, options);
   }
+
+  printDiff(
+    other: Snapshot
+  ): void {
+    const eventDiff = this.diff(other);
+    const mpa = other.computeMPA(this, { value: itemValue });
+
+    const report: ItemReport[] = [];
+    eventDiff.items.forEach((qty, item) => {
+      report.push({
+        item,
+        qty,
+        totalPrice: itemValue(item) * qty
+      });
+    });
+
+    const sortedReport = report.sort((a, b) => b.totalPrice - a.totalPrice);
+
+    printHtml("<b>**********************************</b>");
+    const gains = sortedReport.filter(({ qty }) => qty > 0);
+    gains.slice(0, 10).forEach(lineItem => print(`${lineItem.qty} ${lineItem.item}: ${toString(lineItem.totalPrice, "%,.0f")}`));
+
+    print("---------------------------------");
+
+    const losses = sortedReport.filter(({ qty }) => qty < 0);
+    losses.slice(-10).reverse().forEach(lineItem => print(`${lineItem.qty} ${lineItem.item}: ${toString(lineItem.totalPrice, "%,.0f")}`));
+    printHtml("<b>**********************************</b>");
+
+    // Format the start and end timestamps
+    const startTimeFormatted = formatTimestamp(other.timestamp, "HH:mm:ss");
+    const endTimeFormatted = formatTimestamp(this.timestamp, "HH:mm:ss");
+
+    // Calcule and format the the time difference
+    const timeDiff = this.timestamp.getTime() - other.timestamp.getTime();
+    const hours = Math.floor(timeDiff / 3600000).toString().padStart(2, '0');
+    const minutes = Math.floor((timeDiff % 3600000) / 60000).toString().padStart(2, '0');
+    const seconds = Math.floor((timeDiff % 60000) / 1000).toString().padStart(2, '0');
+    const timeDiffFormatted = `${hours}:${minutes}:${seconds}`;
+
+    printHtml("<b>Summary:</b>");
+
+    print(`From ${startTimeFormatted} to ${endTimeFormatted} took ${timeDiffFormatted}.`);
+    print(`You've earned ${toString(mpa.mpa.items, "%,.0f")} in item differences.`, "teal");
+    printHtml(
+      `<font color=cc5500>You've earned ${toString(mpa.values.meat, "%,.0f")} liquid meat.</font>`,
+    );
+    printHtml(
+      `You've spent ${mpa.turns} adventures for a total (meat + item) <b>${toString(
+        mpa.mpa.effective,
+        "%,.2f",
+      )} mpa</b>.`,
+    );
+    print(
+      `You've earned a total of ${toString(
+        mpa.values.effective,
+        "%,.0f",
+      )} meat.`,
+      "teal",
+    );
+
+    print("");
+  }
 }
+
+function formatTimestamp(date: Date, format: string): string {
+  let hours = date.getHours().toString().padStart(2, '0');
+  let minutes = date.getMinutes().toString().padStart(2, '0');
+  let seconds = date.getSeconds().toString().padStart(2, '0');
+
+  return format.replace('HH', hours).replace('mm', minutes).replace('ss', seconds);
+} 
+
+type ItemReport = {
+  item: Item;
+  qty: number;
+  totalPrice: number;
+};
+
+export default Snapshot;
