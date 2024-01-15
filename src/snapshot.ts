@@ -440,7 +440,10 @@ export class Snapshot {
       `From ${startTimeFormatted} to ${endTimeFormatted} took ${timeDiffFormatted}.`,
     );
     print(
-      `You've earned ${toString(mpa.values.items, "%,.0f")} in item differences.`,
+      `You've earned ${toString(
+        mpa.values.items,
+        "%,.0f",
+      )} in item differences.`,
       "teal",
     );
     printHtml(
