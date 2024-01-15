@@ -145,7 +145,7 @@ function inventoryOperation(
   return new Map<Item, number>(diffEntries.filter(([, value]) => value !== 0));
 }
 
-class Snapshot {
+export class Snapshot {
   meat: number;
   items: Map<Item, number>;
   totalTurns: number;
@@ -440,7 +440,7 @@ class Snapshot {
       `From ${startTimeFormatted} to ${endTimeFormatted} took ${timeDiffFormatted}.`,
     );
     print(
-      `You've earned ${toString(mpa.mpa.items, "%,.0f")} in item differences.`,
+      `You've earned ${toString(mpa.values.items, "%,.0f")} in item differences.`,
       "teal",
     );
     printHtml(
@@ -485,5 +485,3 @@ type ItemReport = {
   qty: number;
   totalPrice: number;
 };
-
-export default Snapshot;
