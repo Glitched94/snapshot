@@ -423,16 +423,16 @@ export class Snapshot {
 
     // Calcule and format the the time difference
     const timeDiff = this.timestamp.getTime() - other.timestamp.getTime();
-    const hours = Math.floor(timeDiff / 3600000)
-      .toString()
-      .padStart(2, "0");
-    const minutes = Math.floor((timeDiff % 3600000) / 60000)
-      .toString()
-      .padStart(2, "0");
-    const seconds = Math.floor((timeDiff % 60000) / 1000)
-      .toString()
-      .padStart(2, "0");
-    const timeDiffFormatted = `${hours}:${minutes}:${seconds}`;
+    const hours = Math.floor(timeDiff / 3600000);
+    const hoursStr = hours.toString().padStart(2, "0");
+    const minutes = Math.floor((timeDiff % 3600000) / 60000);
+    const minutesStr = minutes.toString().padStart(2, "0");
+    const seconds = Math.floor((timeDiff % 60000) / 1000);
+    const secondsStr = seconds.toString().padStart(2, "0");
+    const timeDiffFormatted =
+      `${hoursStr} ${hours === 1 ? "hour" : "hours"}, ` +
+      `${minutesStr} ${minutes === 1 ? "minute" : "minutes"}, and ` +
+      `${secondsStr} ${seconds === 1 ? "second" : "seconds"}`;
 
     printHtml("<b>Summary:</b>");
 
