@@ -42,86 +42,65 @@ function getEquipment(): { [item: string]: number } {
   return equippedItems;
 }
 
-/**
- * Return a mapping of inventory items, mapping foldable items to a single of their forms
- *
- * @param inventoryOnly should closet, DC, and storage be ignore for the inventory calculations
- * @return the inventory results, with foldables mapped to a single of their folding forms
- */
-function mySnapshotItemsWrapper(
-  inventoryOnly = false,
-  inventorySources?: (() => { [item: string]: number })[]
-): Map<Item, number> {
-  const manyToOne = (primary: Item, mapped: Item[]): [Item, Item][] =>
-    mapped.map((target: Item) => [target, primary]);
+const manyToOne = (primary: Item, mapped: Item[]): [Item, Item][] =>
+  mapped.map((target: Item) => [target, primary]);
 
-  const foldable = (item: Item): [Item, Item][] =>
-    manyToOne(item, getFoldGroup(item));
+const foldable = (item: Item): [Item, Item][] =>
+  manyToOne(item, getFoldGroup(item));
 
-  const itemMappings = new Map<Item, Item>([
-    ...foldable($item`liar's pants`),
-    ...foldable($item`ice pick`),
-    ...manyToOne($item`Spooky Putty sheet`, [
-      $item`Spooky Putty monster`,
-      ...getFoldGroup($item`Spooky Putty sheet`),
-    ]),
-    ...foldable($item`stinky cheese sword`),
-    ...foldable($item`naughty paper shuriken`),
-    ...foldable($item`Loathing Legion knife`),
-    ...foldable($item`deceased crimbo tree`),
-    ...foldable($item`makeshift turban`),
-    ...foldable($item`turtle wax shield`),
-    ...foldable($item`metallic foil bow`),
-    ...foldable($item`ironic moustache`),
-    ...foldable($item`bugged balaclava`),
-    ...foldable($item`toggle switch (Bartend)`),
-    ...foldable($item`mushroom cap`),
-    ...manyToOne($item`can of Rain-Doh`, $items`empty Rain-Doh can`),
-    ...manyToOne(
-      $item`meteorite fragment`,
-      $items`meteorite earring, meteorite necklace, meteorite ring`,
-    ),
-    ...manyToOne(
-      $item`Sneaky Pete's leather jacket`,
-      $items`Sneaky Pete's leather jacket (collar popped)`,
-    ),
-    ...manyToOne($item`Boris's Helm`, $items`Boris's Helm (askew)`),
-    ...manyToOne(
-      $item`Jarlsberg's pan`,
-      $items`Jarlsberg's pan (Cosmic portal mode)`,
-    ),
-    ...manyToOne(
-      $item`tiny plastic sword`,
-      $items`grogtini, bodyslam, dirty martini, vesper, cherry bomb, sangria del diablo`,
-    ),
-    ...manyToOne(
-      $item`earthenware muffin tin`,
-      $items`blueberry muffin, bran muffin, chocolate chip muffin`,
-    ),
-    ...manyToOne($item`ChibiBuddy™ (on)`, $items`ChibiBuddy™ (off)`),
-  ]);
+const itemMappings = new Map<Item, Item>([
+  ...foldable($item`liar's pants`),
+  ...foldable($item`ice pick`),
+  ...manyToOne($item`Spooky Putty sheet`, [
+    $item`Spooky Putty monster`,
+    ...getFoldGroup($item`Spooky Putty sheet`),
+  ]),
+  ...foldable($item`stinky cheese sword`),
+  ...foldable($item`naughty paper shuriken`),
+  ...foldable($item`Loathing Legion knife`),
+  ...foldable($item`deceased crimbo tree`),
+  ...foldable($item`makeshift turban`),
+  ...foldable($item`turtle wax shield`),
+  ...foldable($item`metallic foil bow`),
+  ...foldable($item`ironic moustache`),
+  ...foldable($item`bugged balaclava`),
+  ...foldable($item`toggle switch (Bartend)`),
+  ...foldable($item`mushroom cap`),
+  ...manyToOne($item`can of Rain-Doh`, $items`empty Rain-Doh can`),
+  ...manyToOne(
+    $item`meteorite fragment`,
+    $items`meteorite earring, meteorite necklace, meteorite ring`,
+  ),
+  ...manyToOne(
+    $item`Sneaky Pete's leather jacket`,
+    $items`Sneaky Pete's leather jacket (collar popped)`,
+  ),
+  ...manyToOne($item`Boris's Helm`, $items`Boris's Helm (askew)`),
+  ...manyToOne(
+    $item`Jarlsberg's pan`,
+    $items`Jarlsberg's pan (Cosmic portal mode)`,
+  ),
+  ...manyToOne(
+    $item`tiny plastic sword`,
+    $items`grogtini, bodyslam, dirty martini, vesper, cherry bomb, sangria del diablo`,
+  ),
+  ...manyToOne(
+    $item`earthenware muffin tin`,
+    $items`blueberry muffin, bran muffin, chocolate chip muffin`,
+  ),
+  ...manyToOne($item`ChibiBuddy™ (on)`, $items`ChibiBuddy™ (off)`),
+]);
 
-  const inventory = new Map<Item, number>();
-  const invLocations = inventorySources ?? inventoryOnly
-    ? [getInventory, getEquipment]
-    : [getInventory, getEquipment, getCloset, getDisplay, getStorage];
+function mapify(data: () => { [item: string]: number }): Map<Item, number> {
+  const map = new Map<Item, number>();
 
-  for (const inventoryFunc of invLocations) {
-    for (const [itemStr, quantity] of Object.entries(inventoryFunc())) {
-      const item = toItem(itemStr);
-      const mappedItem = itemMappings.get(item) ?? item;
-      inventory.set(mappedItem, quantity + (inventory.get(mappedItem) ?? 0));
-    }
-  }
-
-  for (const [itemStr, quantity] of Object.entries(getCampground())) {
+  for (const [itemStr, quantity] of Object.entries(data())) {
     const item = toItem(itemStr);
-    if (item === $item`big rock`) continue; // Used to represent an empty house slot
     const mappedItem = itemMappings.get(item) ?? item;
-    inventory.set(mappedItem, quantity + (inventory.get(mappedItem) ?? 0));
+    map.set(mappedItem, quantity + (map.get(mappedItem) ?? 0));
   }
 
-  return inventory;
+  return map;
 }
 
 /**
@@ -152,6 +131,13 @@ function inventoryOperation(
 export class Snapshot {
   meat: number;
   items: Map<Item, number>;
+  inventory: Map<Item, number>;
+  equipment: Map<Item, number>;
+  closet: Map<Item, number>;
+  display: Map<Item, number>;
+  storage: Map<Item, number>;
+  campground: Map<Item, number>;
+  shop: Map<Item, number>;
   totalTurns: number;
   timestamp: Date;
   /**
@@ -163,28 +149,48 @@ export class Snapshot {
    */
   private constructor(
     meat: number,
-    items: Map<Item, number>,
+    items: Map<Item, number> | undefined,
+    inventory: Map<Item, number>,
+    equipment: Map<Item, number>,
+    closet: Map<Item, number>,
+    display: Map<Item, number>,
+    storage: Map<Item, number>,
+    campground: Map<Item, number>,
+    shop: Map<Item, number>,
     totalTurns: number,
     timestamp?: Date,
   ) {
     this.meat = meat;
-    this.items = items;
+    this.inventory = inventory;
+    this.equipment = equipment;
+    this.closet = closet;
+    this.display = display;
+    this.storage = storage;
+    this.campground = campground;
+    this.shop = shop;
     this.totalTurns = totalTurns;
     this.timestamp = timestamp ?? new Date();
+
+    if (items === undefined) this.items = this.combineItems();
+    else this.items = items;
   }
 
-  /**
-   * Register inventory results that do not get tracked natively
-   *
-   * @param target either the Item or a string saying "meat" of what quantity to modify
-   * @param quantity How much to modify the tracked amount by
-   */
-  register(target: Item | "meat", quantity: number) {
-    if (target === "meat") {
-      this.meat += quantity;
-    } else {
-      this.items.set(target, (this.items.get(target) ?? 0) + quantity);
-    }
+  private combineItems(): Map<Item, number> {
+    const combined = new Map<Item, number>();
+    [
+      this.inventory,
+      this.equipment,
+      this.closet,
+      this.display,
+      this.storage,
+      this.campground,
+      this.shop,
+    ].forEach((sourceMap) => {
+      sourceMap.forEach((quantity, item) => {
+        combined.set(item, quantity + (combined.get(item) || 0));
+      });
+    });
+    return combined;
   }
 
   /**
@@ -220,6 +226,41 @@ export class Snapshot {
         other.items,
         (a: number, b: number) => a - b,
       ),
+      inventoryOperation(
+        this.inventory,
+        other.inventory,
+        (a: number, b: number) => a - b,
+      ),
+      inventoryOperation(
+        this.equipment,
+        other.equipment,
+        (a: number, b: number) => a - b,
+      ),
+      inventoryOperation(
+        this.closet,
+        other.closet,
+        (a: number, b: number) => a - b,
+      ),
+      inventoryOperation(
+        this.display,
+        other.display,
+        (a: number, b: number) => a - b,
+      ),
+      inventoryOperation(
+        this.storage,
+        other.storage,
+        (a: number, b: number) => a - b,
+      ),
+      inventoryOperation(
+        this.campground,
+        other.campground,
+        (a: number, b: number) => a - b,
+      ),
+      inventoryOperation(
+        this.shop,
+        other.shop,
+        (a: number, b: number) => a - b,
+      ),
       this.totalTurns - other.totalTurns,
       new Date(timeDiff),
     );
@@ -251,7 +292,12 @@ export class Snapshot {
   toFile(filename: string): void {
     const val = {
       meat: this.meat,
-      items: Object.fromEntries(this.items),
+      inventory: Object.fromEntries(this.inventory),
+      equipment: Object.fromEntries(this.equipment),
+      closet: Object.fromEntries(this.closet),
+      display: Object.fromEntries(this.display),
+      storage: Object.fromEntries(this.storage),
+      campground: Object.fromEntries(this.campground),
       totalTurns: this.totalTurns,
       timestamp: this.timestamp.toJSON(),
     };
@@ -271,6 +317,13 @@ export class Snapshot {
       const val: {
         meat: number;
         items: { [item: string]: number };
+        inventory: { [item: string]: number };
+        equipment: { [item: string]: number };
+        closet: { [item: string]: number };
+        display: { [item: string]: number };
+        storage: { [item: string]: number };
+        campground: { [item: string]: number };
+        shop: { [item: string]: number };
         totalTurns?: number;
         timestamp: string;
       } = JSON.parse(fileValue);
@@ -279,47 +332,84 @@ export class Snapshot {
         ([itemStr, quantity]) => [toItem(itemStr), quantity],
       );
 
+      const parsedInventory: [Item, number][] = Object.entries(
+        val.inventory,
+      ).map(([itemStr, quantity]) => [toItem(itemStr), quantity]);
+
+      const parsedEquipment: [Item, number][] = Object.entries(
+        val.equipment,
+      ).map(([itemStr, quantity]) => [toItem(itemStr), quantity]);
+
+      const parsedCloset: [Item, number][] = Object.entries(val.closet).map(
+        ([itemStr, quantity]) => [toItem(itemStr), quantity],
+      );
+
+      const parsedDisplay: [Item, number][] = Object.entries(val.display).map(
+        ([itemStr, quantity]) => [toItem(itemStr), quantity],
+      );
+
+      const parsedStorage: [Item, number][] = Object.entries(val.storage).map(
+        ([itemStr, quantity]) => [toItem(itemStr), quantity],
+      );
+
+      const parsedCampground: [Item, number][] = Object.entries(
+        val.campground,
+      ).map(([itemStr, quantity]) => [toItem(itemStr), quantity]);
+
+      const parsedShop: [Item, number][] = Object.entries(val.shop).map(
+        ([itemStr, quantity]) => [toItem(itemStr), quantity],
+      );
+
       return new Snapshot(
         val.meat,
-        new Map<Item, number>(parsedItems),
+        parsedItems.length > 0 ? new Map<Item, number>(parsedItems) : undefined,
+        new Map<Item, number>(parsedInventory),
+        new Map<Item, number>(parsedEquipment),
+        new Map<Item, number>(parsedCloset),
+        new Map<Item, number>(parsedDisplay),
+        new Map<Item, number>(parsedStorage),
+        new Map<Item, number>(parsedCampground),
+        new Map<Item, number>(parsedShop),
         val.totalTurns ?? 0,
         new Date(val.timestamp),
       );
     } else {
       // if the file does not exist, return an empty Snapshot
-      return new Snapshot(0, new Map<Item, number>(), 0);
+      return new Snapshot(
+        0,
+        undefined,
+        new Map<Item, number>(),
+        new Map<Item, number>(),
+        new Map<Item, number>(),
+        new Map<Item, number>(),
+        new Map<Item, number>(),
+        new Map<Item, number>(),
+        new Map<Item, number>(),
+        0,
+      );
     }
-  }
-
-  static getDefaultMeatSources(inventoryOnly = false): (() => number)[] {
-    return inventoryOnly
-      ? [myMeat]
-      : [myMeat, myClosetMeat, myStorageMeat];
-  }
-
-  static getDefaultInventorySources(inventoryOnly = false): (() => { [item: string]: number })[] {
-    return inventoryOnly
-      ? [getInventory, getEquipment]
-      : [getInventory, getEquipment, getCloset, getDisplay, getStorage];
   }
 
   /**
    * Return the meat and items for the current Snapshot
    *
-   * @param inventoryOnly should closet, DC, and storage be ignored for the Snapshot calculation
+   * @param inventoryMeatOnly should closet, DC, and storage be ignored for the Snapshot calculation
    * @returns current Snapshot
    */
-  static current(
-    inventoryOnly = false,
-    inventorySources?: (() => { [item: string]: number })[],
-    meatSources?: (() => number)[]
-  ): Snapshot {
-    const meat = meatSources ?? inventoryOnly
+  static current(inventoryMeatOnly = false): Snapshot {
+    const meat = inventoryMeatOnly
       ? [myMeat]
       : [myMeat, myClosetMeat, myStorageMeat];
     return new Snapshot(
       sum(meat, (f) => f()),
-      mySnapshotItemsWrapper(inventoryOnly, inventorySources),
+      undefined,
+      mapify(getInventory),
+      mapify(getEquipment),
+      mapify(getCloset),
+      mapify(getDisplay),
+      mapify(getStorage),
+      mapify(getCampground),
+      mapify(getShop),
       totalTurnsPlayed(),
     );
   }
