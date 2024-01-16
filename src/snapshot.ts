@@ -7,6 +7,7 @@ import {
   getCloset,
   getDisplay,
   getInventory,
+  getShop,
   getStorage,
   myClosetMeat,
   myMeat,
@@ -47,7 +48,10 @@ function getEquipment(): { [item: string]: number } {
  * @param inventoryOnly should closet, DC, and storage be ignore for the inventory calculations
  * @return the inventory results, with foldables mapped to a single of their folding forms
  */
-function mySnapshotItemsWrapper(inventoryOnly = false): Map<Item, number> {
+function mySnapshotItemsWrapper(
+  inventoryOnly = false,
+  inventorySources?: (() => { [item: string]: number })[]
+): Map<Item, number> {
   const manyToOne = (primary: Item, mapped: Item[]): [Item, Item][] =>
     mapped.map((target: Item) => [target, primary]);
 
@@ -98,7 +102,7 @@ function mySnapshotItemsWrapper(inventoryOnly = false): Map<Item, number> {
   ]);
 
   const inventory = new Map<Item, number>();
-  const invLocations = inventoryOnly
+  const invLocations = inventorySources ?? inventoryOnly
     ? [getInventory, getEquipment]
     : [getInventory, getEquipment, getCloset, getDisplay, getStorage];
 
@@ -287,19 +291,35 @@ export class Snapshot {
     }
   }
 
+  static getDefaultMeatSources(inventoryOnly = false): (() => number)[] {
+    return inventoryOnly
+      ? [myMeat]
+      : [myMeat, myClosetMeat, myStorageMeat];
+  }
+
+  static getDefaultInventorySources(inventoryOnly = false): (() => { [item: string]: number })[] {
+    return inventoryOnly
+      ? [getInventory, getEquipment]
+      : [getInventory, getEquipment, getCloset, getDisplay, getStorage];
+  }
+
   /**
    * Return the meat and items for the current Snapshot
    *
    * @param inventoryOnly should closet, DC, and storage be ignored for the Snapshot calculation
    * @returns current Snapshot
    */
-  static current(inventoryOnly = false): Snapshot {
-    const meat = inventoryOnly
+  static current(
+    inventoryOnly = false,
+    inventorySources?: (() => { [item: string]: number })[],
+    meatSources?: (() => number)[]
+  ): Snapshot {
+    const meat = meatSources ?? inventoryOnly
       ? [myMeat]
       : [myMeat, myClosetMeat, myStorageMeat];
     return new Snapshot(
       sum(meat, (f) => f()),
-      mySnapshotItemsWrapper(inventoryOnly),
+      mySnapshotItemsWrapper(inventoryOnly, inventorySources),
       totalTurnsPlayed(),
     );
   }
