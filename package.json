@@ -1,6 +1,6 @@
 {
   "name": "snapshot-libram",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "A tool to capture Inventory snapshots, based on libram's Session class",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
