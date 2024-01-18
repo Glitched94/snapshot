@@ -631,6 +631,7 @@ var Snapshot = /* @__PURE__ */ function() {
           display: Object.fromEntries(this.display),
           storage: Object.fromEntries(this.storage),
           campground: Object.fromEntries(this.campground),
+          shop: Object.fromEntries(this.shop),
           totalTurns: this.totalTurns,
           timestamp: this.timestamp.toJSON()
         };
